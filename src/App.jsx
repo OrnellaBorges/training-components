@@ -39,7 +39,7 @@ const badges = [
   },
   {
     name: 'terre',
-    level: 90,
+    level: 100,
     image: 'https://www.pokepedia.fr/images/6/68/Badge_Terre_Kanto.png'
   }
 ]
@@ -81,7 +81,7 @@ const pokemons = [
 export default function App() {
   const [levelOfBadgeSelected, setLevelOfBadgeSelected] = useState(badges[0] ? badges[0].level : 0)
   const [isLoaded, setIsLoaded] = useState(false)
-  const [pokemonSelected, setPokemonSelected] = useState([])
+  const [pokemonsSelected, setPokemonsSelected] = useState([])
   const [allPokemons, setAllPokemons] = useState([])
 
   useEffect(() => {
@@ -91,17 +91,16 @@ export default function App() {
     document.title = `Badge : ${stringFormatted}`
   }, [levelOfBadgeSelected])
 
-  //let allPokemons = []
   useEffect(() => {
     async function loadAll() {
-      await fetch(`https://pokebuildapi.fr/api/v1/pokemon/limit/15`)
+      await fetch(`https://pokebuildapi.fr/api/v1/pokemon/limit/151`)
       .then(r => r.json())
       .then(data => setAllPokemons(data))
     }
     loadAll()
 
     // Tous les appels en meme temps :
-    async function loadAllImages() {
+    async function loadPokemonBagImages() {
       const arrayPokemon = await Promise.all(pokemons.map(({ name }) => 
         fetch(`https://pokebuildapi.fr/api/v1/pokemon/${name}`)
         .then(r => r.json())
@@ -111,7 +110,7 @@ export default function App() {
 
       setIsLoaded(true)
     }
-    loadAllImages()
+    loadPokemonBagImages()
 
     // Appels un par un :
     async function loadOneImageByOneImage() {
@@ -131,66 +130,65 @@ export default function App() {
 
   }, [])
 
-  const filteredPokemons = pokemons.filter(({ level }) => level <= levelOfBadgeSelected)
+  const filteredPokemons = pokemonsSelected.filter(({ level }) => level <= levelOfBadgeSelected)
   const filteredBadge = badges.filter(({ level }) => level === levelOfBadgeSelected)
   const { image, name } = filteredBadge[0]
 
-  const handleChange = (value, index) => {
-    const id = index + 1
-    console.log('id', id)
+  const isPokemonSelected = (index) => pokemonsSelected.some(({id}) => id === index)
 
-    const found = pokemonSelected.includes(id)
-    //const found = pokemonSelected.find(id)
-    console.log('found', found)
+  const generateRandomLevel = () => {
+    const randomLevel = Math.floor(Math.random() * 100)
+    return !randomLevel ? 1 : randomLevel
+  }
 
-    if(found) {
-
+  const handleChange = (name, image, idSelected) => {
+    const pokemonFound = pokemonsSelected.find(({ id }) => id === idSelected)
+    if(pokemonFound) {
+      const othersPokemonsSelected = pokemonsSelected.filter(({id}) => id !== idSelected)
+      setPokemonsSelected([...othersPokemonsSelected])
     }
     else {
-      setPokemonSelected([...pokemonSelected, id])
+      const level = generateRandomLevel()
+      setPokemonsSelected([...pokemonsSelected, { name, image, level, id: idSelected }])
     }
-
-    //console.log('value', value)
-    //setPokemonSelected([...pokemonSelected, id])
   }
 
   return (
     <div className={`app ${!isLoaded && 'app-centered'}`}>
       {allPokemons.length && isLoaded ?
         <>
-          <p>Liste de tous les pokémons :</p>
-          <ul style={{display: 'flex', flexWrap: 'wrap'}}>
-            {allPokemons.map(({name, image}, index) =>
-              <li key={index} className={`pokemon ${false && 'pokemon-selected'}`} style={{ width: '50px' }}>
+          <section>
+            <p>Liste de tous les pokémons :</p>
+            <ul style={{display: 'flex', flexWrap: 'wrap'}}>
+              {allPokemons.map(({name, image}, index) =>
+                <li key={index} className={`pokemon ${isPokemonSelected(index + 1) && 'pokemon-selected'}`} style={{ width: '50px' }}>
 
-                <label
-                  //onClick={(e) => e.stopPropagation()}
-                  htmlFor={index}
-                  //className='[&:not(:last-child)]:mr-3 cursor-pointer'
-                >
-                  <input
-                    type='checkbox'
-                    name='groupName'
-                    //className='cursor-pointer'
-                    id={index}
-                    //onClick={(e) => handleClickCheckbox(e)}
-                    style={{display: ''}}
-                    onChange={(e) => handleChange(e.target.value, index)}
-                  />
-                  <img src={image} alt={name} />
-                </label>
+                  <label
+                    htmlFor={index}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <input
+                      type='checkbox'
+                      name='groupName'
+                      id={index}
+                      style={{display: 'none'}}
+                      onChange={() => handleChange(name, image, index + 1)}
+                    />
+                    <img src={image} alt={name} />
+                  </label>
 
-              </li>
-            )}
-          </ul>
-          <section style={{marginBottom: '0px'}}>
+                </li>
+              )}
+            </ul>
+          </section>
+          <section>
             <p>Liste de vos pokémons choisis :</p>
             <div style={{display: 'flex'}}>
               {/* <div style={{ height: '170px' }}>
                 <img src='https://www.pokepedia.fr/images/f/f3/Red-LGPE.png' alt='dresseur' />
               </div> */}
               <ul style={{ display: 'flex', flexWrap: 'wrap', height: 'fit-content'}}>
-                {pokemons.map(({ name, level, image }, index) =>
+                {pokemonsSelected.map(({ name, level, image }, index) =>
                   <li className='pokemon pokemon-list' key={index}>
                     <img src={image} alt={name} />
                     <p>{name} (niveau: {level})</p>
