@@ -77,6 +77,7 @@ const pokemons = [
     level: 85
   }
 ]
+const maxPokemonAuthorized = 6
 
 export default function App() {
   const [levelOfBadgeSelected, setLevelOfBadgeSelected] = useState(badges[0] ? badges[0].level : 0)
@@ -128,6 +129,9 @@ export default function App() {
     }
     //loadOneImageByOneImage()
 
+    // Retrieve pokemons on Local Storage :
+    let pokemonsSelected = localStorage.getItem('pokemons-selected')
+    if (pokemonsSelected?.length) setPokemonsSelected(JSON.parse(pokemonsSelected))
   }, [])
 
   const filteredPokemons = pokemonsSelected.filter(({ level }) => level <= levelOfBadgeSelected)
@@ -145,11 +149,19 @@ export default function App() {
     const pokemonFound = pokemonsSelected.find(({ id }) => id === idSelected)
     if(pokemonFound) {
       const othersPokemonsSelected = pokemonsSelected.filter(({id}) => id !== idSelected)
-      setPokemonsSelected([...othersPokemonsSelected])
+      const newState = [...othersPokemonsSelected]
+      setPokemonsSelected(newState)
+      if(othersPokemonsSelected.length) localStorage.setItem('pokemons-selected', JSON.stringify(newState))
+      else localStorage.removeItem('pokemons-selected')
+
     }
     else {
-      const level = generateRandomLevel()
-      setPokemonsSelected([...pokemonsSelected, { name, image, level, id: idSelected }])
+      if(pokemonsSelected.length < maxPokemonAuthorized) {
+        const level = generateRandomLevel()
+        const newState = [...pokemonsSelected, { name, image, level, id: idSelected }]
+        setPokemonsSelected(newState)
+        localStorage.setItem('pokemons-selected', JSON.stringify(newState))
+      }
     }
   }
 
