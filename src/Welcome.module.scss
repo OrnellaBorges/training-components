@@ -1,0 +1,9 @@
+$sarenza-color: #99214b;
+
+.parent {
+  border: 1px solid white;
+
+  .enfant {
+    color: $sarenza-color;
+  }
+}
